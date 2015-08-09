@@ -1,10 +1,10 @@
 /**
  * @file	clsPCA9555.cpp
  * @author 	Nico Verduin
- * @date  	dd-mm-yyyy
+ * @date  	9-8-2015
  *
  * @mainpage  clsPCA9555
- * Class to enable pinMode(), digitalRead() and digitalWrite() functions on IO expanders
+ * Class to enable pinMode(), digitalRead() and digitalWrite() functions on PCA9555 IO expanders
  *
  *
  * @par Version Control
@@ -15,7 +15,8 @@
  *
  * @par License info
  *
- * <one line to give the program's name and a brief idea of what it does.>
+ * Class to enable the use of single pins on PCA9555 IO Expander using
+ * pinMode(), digitalRead() and digitalWrite().
  *
  * Copyright (C) 2015  Nico Verduin
  *
@@ -46,7 +47,6 @@
 #include "clsPCA9555.h"
 #include "Wire.h"
 
-
 /**
  * @name PCA9555 constructor
  * @param address I2C address of the IO Expander
@@ -54,6 +54,7 @@
  */
 PCA9555::PCA9555(uint8_t address) {
 	_address = address;		// save the address id
+	_valueRegister = 0;
 	Wire.begin();			// start I2C communication
 }
 
@@ -64,8 +65,9 @@ PCA9555::PCA9555(uint8_t address) {
  * sets the mode of this IO pin
  */
 void PCA9555::pinMode(uint8_t pin, uint8_t IOMode) {
+
 	//
-	// check valid pin first
+	// check if valid pin first
 	//
 	if (pin <= 15) {
 		//
@@ -76,35 +78,21 @@ void PCA9555::pinMode(uint8_t pin, uint8_t IOMode) {
 			// mask correct bit to 0 by inverting x so that only
 			// the correct bit is LOW. The rest stays HIGH
 			//
-;
-			_configurationRegister = _configurationRegister && ~(1 << pin);
+			_configurationRegister = _configurationRegister & ~(1 << pin);
 		} else {
 			//
 			// or just the required bit to 1
 			//
-			_configurationRegister = _configurationRegister || (1 << pin);
+			_configurationRegister = _configurationRegister | (1 << pin);
 		}
 		//
 		// write configuration register to chip
 		//
 		Wire.beginTransmission(_address);  			// setup direction register
-		Wire.write(0x06);  							// Port A
+		Wire.write(NXP_CONFIG);
 		Wire.write(_configurationRegister_low);
-		_error = Wire.endTransmission();
-
-#ifdef DEBUG
-Serial.print("pinMode : Configure Port A _error = ");
-Serial.println(_error);
-#endif
-		Wire.beginTransmission(_address);  			// setup direction register
-		Wire.write(0x07);  							// port B
 		Wire.write(_configurationRegister_high);
 		_error = Wire.endTransmission();
-
-#ifdef DEBUG
-Serial.print("pinMode : Configure Port B _error = ");
-Serial.println(_error);
-#endif
 	}
 }
 /**
@@ -113,6 +101,7 @@ Serial.println(_error);
  * @return value of pin
  */
 uint8_t PCA9555::digitalRead(uint8_t pin) {
+	uint16_t _inputData = 0;
 	//
 	// we wil only process pins <= 15
 	//
@@ -120,36 +109,28 @@ uint8_t PCA9555::digitalRead(uint8_t pin) {
 		//
 		// read the address input register
 		//
-		Wire.beginTransmission(_address);  			// setup read registers
-		Wire.requestFrom(NXP_INPUT, 2);  			// pointer to input register address 0
+		Wire.beginTransmission(_address);  		// setup read registers
+		Wire.write(NXP_INPUT);
 		_error = Wire.endTransmission();
-
-#ifdef DEBUG
-Serial.print("digitalRead : Read Input register error code = ");
-Serial.println(_error);
-#endif
-
 		//
-		// wait for data
+		// ask for 2 bytes to be returned
 		//
-		while (Wire.available() != 2 ) {};
+		Wire.requestFrom((int)_address, 2);
 		//
-		// read data
+		// wait until they are ready
 		//
-		_valueRegister_low 	= Wire.read();  		// Input register 0
-		_valueRegister_high = Wire.read();  		// Input register 1
-
-#ifdef DEBUG
-Serial.print("digitalRead : value of INPUT register reads = ");
-Serial.println(_valueRegister, BIN);
-#endif
-
+		while(Wire.available() != 2){};
+		//
+		// read both bytes
+		//
+		_inputData = Wire.read();
+		_inputData |= Wire.read() << 8;
 		//
 		// now mask the bit required and see if it is a HIGH
 		//
-		if ((_valueRegister & (1 << pin)) > 0){
+		if ((_inputData & (1 << pin)) > 0){
 			//
-			// the bit is HIGH otherwise we would hava a zero value
+			// the bit is HIGH otherwise we would return a LOW value
 			//
 			return HIGH;
 		} else {
@@ -157,14 +138,17 @@ Serial.println(_valueRegister, BIN);
 		}
 	} else {
 		//
-		// invalid pin
+		// invalid pin. Basically this should never be returned as it shows
+		// lack of insight waht you are programming with
 		//
 		return 255;
 	}
 }
 
 void PCA9555::digitalWrite(uint8_t pin, uint8_t value) {
+
 	uint16_t valueToSend;
+
 	//
 	// check valid pin first
 	//
@@ -178,72 +162,30 @@ void PCA9555::digitalWrite(uint8_t pin, uint8_t value) {
 			valueToSend = LOW;
 		}
 		//
-		// now read the output register first.
-		//
-		Wire.beginTransmission(_address);  			// setup read registers
-		Wire.requestFrom(NXP_OUTPUT, 2);  			// pointer to input register address 0
-		_error = Wire.endTransmission();
-
-#ifdef DEBUG
-Serial.print("digitalWrite : Read OUTPUT register Error code = ");
-Serial.println(_error);
-#endif
-
-		//
-		// wait for data
-		//
-		while (Wire.available() != 2 ) {};
-		//
-		// and read the actual data
-		//
-		_valueRegister_low 	= Wire.read();  		// Output register 0
-		_valueRegister_high = Wire.read();  		// Output register 1
-
-
-#ifdef DEBUG
-Serial.print("digitalRead : value of OUTPUT register reads = ");
-Serial.println(_valueRegister, BIN);
-#endif
-
-		//
 		// next set the bit we want to set
 		// if the value is LOW we will and the register value with correct bit set to zero
 		// if the value is HIGH we will or the register value with correct bit set to HIGH
 		//
-		if (valueToSend) {
+		if (valueToSend == HIGH) {
 			//
 			// this is a High value so we will or it with the value register
 			//
-			_valueRegister = _valueRegister | (valueToSend << pin);	// and OR bit in register
+			_valueRegister = _valueRegister | (1 << pin);	// and OR bit in register
 		} else {
 			//
 			// this is a LOW value so we have to AND it with 0 into the _valueRegister
 			//
-			_valueRegister = _valueRegister & ~(valueToSend << pin);	// AND all bits
+			_valueRegister = _valueRegister & ~(1 << pin);	// AND all bits
 		}
+
 		//
 		// write output register to chip
 		//
 		Wire.beginTransmission(_address);  			// setup direction registers
-		Wire.write(0x06);  							// pointer to DDR address 0
-		Wire.write(_configurationRegister_low);  	// DDR Port0
+		Wire.write(NXP_OUTPUT);  							// pointer to configuration register address 0
+		Wire.write(_valueRegister_low);  			// write config register low byte
+		Wire.write(_valueRegister_high);  			// write config register high byte
 		_error = Wire.endTransmission();
-
-#ifdef DEBUG
-Serial.print("digitalWrite : Write Output register 0 error code = ");
-Serial.println(_error);
-#endif
-
-		Wire.beginTransmission(_address);  			// setup direction registers
-		Wire.write(0x07);  							// pointer to DDR address 0
-		Wire.write(_configurationRegister_high);  	// DDR Port1
-		_error = Wire.endTransmission();
-
-#ifdef DEBUG
-Serial.print("digitalWrite : Write Output register 1 error code = ");
-Serial.println(_error);
-#endif
-
 	}
 }
 

@@ -25,10 +25,10 @@ enum {
 //
 // PCA9555 defines
 //
-#define NXP_INPUT      (0)
-#define NXP_OUTPUT     (2)
-#define NXP_INVERT     (4)
-#define NXP_CONFIG     (6)
+#define NXP_INPUT      0
+#define NXP_OUTPUT     2
+#define NXP_INVERT     4
+#define NXP_CONFIG     6
 
 class PCA9555 {
 public:
