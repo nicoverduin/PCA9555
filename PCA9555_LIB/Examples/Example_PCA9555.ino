@@ -5,7 +5,7 @@
 #include "WProgram.h"
 #endif
 
-#include "PCA9555_LIB/clsPCA9555.h"
+#include "clsPCA9555.h"
 #include "Wire.h"
 
 PCA9555 ioport(0x20);
