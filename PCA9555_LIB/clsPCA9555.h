@@ -38,6 +38,12 @@ public:
 	void digitalWrite(uint8_t pin, uint8_t value );		// digitalWrite
 
 private:
+	//
+	// low level methods
+	//
+	uint16_t I2CGetValue(uint8_t address, uint8_t reg);
+	void I2CSetValue(uint8_t address, uint8_t reg, uint8_t value);
+
 	union {
 		struct {
 			uint8_t _configurationRegister_low;			// low order byte
