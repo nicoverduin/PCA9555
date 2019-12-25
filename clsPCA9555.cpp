@@ -11,7 +11,7 @@
  * @par License info
  *
  * Class to enable the use of single pins on PCA9555 IO Expander using
- * pinMode(), digitalRead() and digitalWrite().
+ * begin(), pinMode(), digitalRead() and digitalWrite().
  *
  * Copyright (C) 2015  Nico Verduin
  *
@@ -50,6 +50,13 @@
 PCA9555::PCA9555(uint8_t address) {
     _address         = address;        // save the address id
     _valueRegister   = 0;
+}
+
+/**
+ * @name begin
+ * begin I2C
+ */
+void PCA9555::begin(void) {
     Wire.begin();                      // start I2C communication
 }
 

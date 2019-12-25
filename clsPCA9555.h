@@ -33,6 +33,7 @@ enum {
 class PCA9555 {
 public:
     PCA9555(uint8_t address);                            // constructor
+    void begin(void);                                    // begin 
     void pinMode(uint8_t pin, uint8_t IOMode );          // pinMode
     uint8_t digitalRead(uint8_t pin);                    // digitalRead
     void digitalWrite(uint8_t pin, uint8_t value );      // digitalWrite

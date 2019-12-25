@@ -17,6 +17,10 @@ PCA9555 ioport(0x20);
 void setup()
 {
 	//
+	// start I2C
+	//
+	ioport.begin();
+	//
 	// set first 14 pins to output
 	//
 	for (uint8_t i = 0; i < 14; i++){
