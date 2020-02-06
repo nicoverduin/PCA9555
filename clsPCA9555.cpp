@@ -11,7 +11,7 @@
  * @par License info
  *
  * Class to enable the use of single pins on PCA9555 IO Expander using
- * begin(), pinMode(), digitalRead() and digitalWrite().
+ * pinMode(), digitalRead() and digitalWrite().
  *
  * Copyright (C) 2015  Nico Verduin
  *
@@ -42,22 +42,36 @@
 #include "clsPCA9555.h"
 #include "Wire.h"
 
+PCA9555* PCA9555::instancePointer = 0;
+
 /**
  * @name PCA9555 constructor
  * @param address I2C address of the IO Expander
  * Creates the class interface and sets the I2C Address of the port
  */
-PCA9555::PCA9555(uint8_t address) {
+PCA9555::PCA9555(uint8_t address, int interruptPin) {
     _address         = address;        // save the address id
     _valueRegister   = 0;
+    Wire.begin();                      // start I2C communication
+
+    if(interruptPin >= 0)
+    {
+    instancePointer = this;
+    attachInterrupt(digitalPinToInterrupt(interruptPin), PCA9555::alertISR, LOW); // Set to low for button presses
+    }
 }
 
-/**
- * @name begin
- * begin I2C
- */
-void PCA9555::begin(void) {
-    Wire.begin();                      // start I2C communication
+// Checks if PCA9555 is responsive. Refer to Wire.endTransmission() from Arduino for details.
+bool PCA9555::begin(){
+    Wire.beginTransmission(_address);
+    Wire.write(0x02); // Test Address
+    _error = Wire.endTransmission();
+
+    if(_error != 0){
+      return false;
+    }else{
+      return true;
+    }
 }
 
 /**
@@ -147,6 +161,34 @@ void PCA9555::digitalWrite(uint8_t pin, uint8_t value) {
     I2CSetValue(_address, NXP_OUTPUT    , _valueRegister_low);
     I2CSetValue(_address, NXP_OUTPUT + 1, _valueRegister_high);
 }
+
+// This is the actual ISR
+// Stores states of all pins in _stateOfPins
+void PCA9555::pinStates(){
+  _stateOfPins = I2CGetValue(_address, NXP_INPUT);
+  _stateOfPins|= I2CGetValue(_address, NXP_INPUT + 1) << 8;
+}
+
+// Returns to user the state of desired pin
+uint8_t PCA9555::stateOfPin(uint8_t pin){
+  if ((_stateOfPins & (1 << pin)) > 0){
+    //
+    // the bit is HIGH otherwise we would return a LOW value
+    //
+    return HIGH;
+  } else {
+    return LOW;
+  }
+}
+
+void PCA9555::alertISR()
+{
+  if (instancePointer != 0)
+  {
+    instancePointer->pinStates(); // Points to the actual ISR
+  }
+}
+
 //
 // low level hardware methods
 //
@@ -202,5 +244,3 @@ void PCA9555::I2CSetValue(uint8_t address, uint8_t reg, uint8_t value){
     Wire.write(value);                            // write config register low byte
     _error = Wire.endTransmission();
 }
-
-
