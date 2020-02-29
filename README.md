@@ -16,6 +16,7 @@ Implemented begin() to check connection with PCA9555 and optional interrupt func
 * begin() checks if PCA9555 is responsive
 * pinStates() ISR retrieves state of all I/O pins
 * stateOfPin()  returns the state of a particular pin
+* setClock() sets clock speed
 
 ## Additional
 The code supports either pinnumbers 0 - 15 or ED0 - ED15. This to stay more or less in sync with Arduino.

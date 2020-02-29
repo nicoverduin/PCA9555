@@ -181,6 +181,20 @@ uint8_t PCA9555::stateOfPin(uint8_t pin){
   }
 }
 
+/**
+ * @name setClock modifies the clock frequency for I2C communication
+ * @param clockFrequency
+ * clockFrequency: the value (in Hertz) of desired communication clock.
+ * The PCA9555 supports a 400kHz clock.
+ * Accepted values are:
+ *    10000 low speed mode, supported on some processors
+ *    100000, standard mode
+ *    400000, fast mode
+ */
+void PCA9555::setClock(uint32_t clockFrequency){
+  Wire.setClock(clockFrequency);
+}
+
 void PCA9555::alertISR()
 {
   if (instancePointer != 0)

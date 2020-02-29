@@ -21,6 +21,10 @@ void setup()
 	//
 	ioport.begin();
 	//
+	// sets the I2C clock to 400kHz
+	//
+	ioport.setClock(400000);
+	//
 	// set first 14 pins to output
 	//
 	for (uint8_t i = 0; i < 14; i++){
