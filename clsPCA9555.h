@@ -43,6 +43,7 @@ public:
     uint8_t digitalRead(uint8_t pin);                    // digitalRead
     void digitalWrite(uint8_t pin, uint8_t value );      // digitalWrite
     uint8_t stateOfPin(uint8_t pin);                     // Actual ISR
+    void setClock(uint32_t clockFrequency);              // Clock speed
     bool begin();                                        // Checks if PCA is responsive
 
 private:
