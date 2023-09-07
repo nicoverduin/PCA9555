@@ -52,6 +52,7 @@ PCA9555* PCA9555::instancePointer = 0;
 PCA9555::PCA9555(uint8_t address, int interruptPin) {
     _address         = address;        // save the address id
     _valueRegister   = 0;
+    _configurationRegister = 65535;
     Wire.begin();                      // start I2C communication
 
     if(interruptPin >= 0)
